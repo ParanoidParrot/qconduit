@@ -92,6 +92,7 @@ async def run_worker(r: redis.Redis, budget: BudgetController, poll_interval: fl
             # Re-queue LOW/MEDIUM after a backoff; drop if hard stop
             if "hard stop" not in reason:
                 await asyncio.sleep(5)
+                job.status = JobStatus.QUEUED   # reset before re-enqueue so _save_job doesn't stomp
                 from scheduler.queue import enqueue
                 await enqueue(r, job)
             continue
@@ -102,6 +103,7 @@ async def run_worker(r: redis.Redis, budget: BudgetController, poll_interval: fl
             await update_job_status(r, job.job_id, JobStatus.THROTTLED,
                                     error=f"Circuit open for {job.provider.value}")
             await asyncio.sleep(2)
+            job.status = JobStatus.QUEUED   # reset before re-enqueue
             from scheduler.queue import enqueue
             await enqueue(r, job)
             continue

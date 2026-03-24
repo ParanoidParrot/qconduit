@@ -17,6 +17,7 @@ from scheduler.models import Job, JobStatus, TaskAccepted, TaskRequest
 from scheduler.queue import enqueue, get_job, get_queue_depths
 from scheduler.router import build_job_params
 from scheduler.worker import run_worker
+from scheduler.metrics import jobs_total
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("qflow.api")
@@ -79,6 +80,7 @@ async def submit_task(request: TaskRequest):
     )
 
     position = await enqueue(r, job)
+    jobs_total.labels(provider=provider.value, action=request.action.value, priority=priority.value).inc()
     budget_state = await budget.get_state()
 
     # tracker_url: poll endpoint for HIGH/MEDIUM, grafana for LOW
@@ -146,3 +148,57 @@ async def metrics():
     from scheduler.metrics import REGISTRY
     data = generate_latest(REGISTRY)
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
+
+# ── Demo-only endpoints (circuit breaker testing) ─────────────────────────────
+
+@app.post("/demo/register-flaky")
+async def register_flaky_provider(failure_rate: float = 0.7):
+    """Registers MockFlaky provider at runtime — demo/testing only."""
+    from scheduler.providers import _REGISTRY
+    from scheduler.providers.mock_providers import MockFlakyProvider, MockStableProvider
+    _REGISTRY["mock_flaky"]  = MockFlakyProvider(failure_rate=failure_rate)
+    _REGISTRY["mock_stable"] = MockStableProvider()
+    return {
+        "registered": ["mock_flaky", "mock_stable"],
+        "failure_rate": failure_rate,
+        "message": f"MockFlaky registered with {failure_rate*100:.0f}% failure rate",
+    }
+
+
+@app.post("/demo/task", response_model=TaskAccepted, status_code=202)
+async def submit_demo_task(provider: str, action: str, input: dict | str | None = None):
+    """Submit a task with explicit provider — demo/testing only. Bypasses provider inference."""
+    from scheduler.models import ActionType, Provider
+    from scheduler.budget import estimate_cost
+    from scheduler.router import infer_priority
+
+    try:
+        _provider = Provider(provider)
+        _action   = ActionType(action)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    priority       = infer_priority(_action)
+    estimated_cost = estimate_cost(_provider, _action, input or {})
+
+    job = Job(
+        provider=_provider, action=_action, priority=priority,
+        input=input or {}, estimated_cost_usd=estimated_cost,
+    )
+    position     = await enqueue(r, job)
+    budget_state = await budget.get_state()
+
+    from scheduler.models import Priority as P
+    tracker_url = (
+        f"{GRAFANA_URL}?var-job_id={job.job_id}" if priority == P.LOW
+        else f"{API_BASE_URL}/jobs/{job.job_id}"
+    )
+
+    return TaskAccepted(
+        job_id=job.job_id, status=JobStatus.QUEUED, priority=priority,
+        queue_position=position, estimated_cost_usd=estimated_cost,
+        budget_remaining_usd=budget_state["remaining_usd"],
+        tracker_url=tracker_url,
+        message=f"Demo task queued via {provider}/{action}",
+    )
