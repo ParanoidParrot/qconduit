@@ -1,0 +1,37 @@
+{
+  "providers": {
+    "sarvam": {
+      "tts":              { "unit": "char",    "cost_per_unit": 0.000003 },
+      "stt":              { "unit": "second",  "cost_per_unit": 0.000083 },
+      "translation":      { "unit": "char",    "cost_per_unit": 0.000002 },
+      "transliteration":  { "unit": "char",    "cost_per_unit": 0.000001 }
+    },
+    "openai": {
+      "llm_inference":    { "unit": "token",   "cost_per_unit": 0.000005 },
+      "embedding":        { "unit": "token",   "cost_per_unit": 0.0000001 },
+      "image_generation": { "unit": "image",   "cost_per_unit": 0.04 },
+      "stt":              { "unit": "second",  "cost_per_unit": 0.0001 },
+      "tts":              { "unit": "char",    "cost_per_unit": 0.000015 }
+    },
+    "anthropic": {
+      "llm_inference":    { "unit": "token",   "cost_per_unit": 0.000003 }
+    },
+    "elevenlabs": {
+      "tts":              { "unit": "char",    "cost_per_unit": 0.00003 }
+    },
+    "replicate": {
+      "image_generation": { "unit": "second",  "cost_per_unit": 0.00055 }
+    },
+    "ollama": {
+      "llm_inference":    { "unit": "token",   "cost_per_unit": 0.0 },
+      "embedding":        { "unit": "token",   "cost_per_unit": 0.0 }
+    }
+  },
+
+  "_comment_units": {
+    "char":   "character count of input text",
+    "token":  "estimated tokens (chars / 4 as rough estimate)",
+    "second": "audio duration in seconds",
+    "image":  "flat per image"
+  }
+}
