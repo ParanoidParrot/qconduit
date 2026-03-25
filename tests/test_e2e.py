@@ -207,6 +207,63 @@ class TestJobModel:
         assert restored.provider == Provider.SARVAM
 
 
+
+
+class TestPriorityOverride:
+    """Caller-supplied priority_override is respected over inferred priority."""
+
+    def test_override_low_for_tts(self):
+        """TTS is normally HIGH — caller can demote it to LOW for batch use."""
+        from scheduler.models import ActionType, Priority, TaskRequest
+        from scheduler.router import build_job_params
+
+        req = TaskRequest(
+            action=ActionType.TTS,
+            input={"text": "batch tts job"},
+            priority_override=Priority.LOW,
+        )
+        priority, provider, source = build_job_params(req)
+        assert priority == Priority.LOW
+        assert source   == "override"
+
+    def test_no_override_returns_inferred(self):
+        from scheduler.models import ActionType, Priority, TaskRequest
+        from scheduler.router import build_job_params
+
+        req = TaskRequest(action=ActionType.TTS, input={"text": "live tts"})
+        priority, provider, source = build_job_params(req)
+        assert priority == Priority.HIGH
+        assert source   == "inferred"
+
+    def test_override_high_for_embedding(self):
+        """Embedding is normally LOW — caller can promote it."""
+        from scheduler.models import ActionType, Priority, TaskRequest
+        from scheduler.router import build_job_params
+
+        req = TaskRequest(
+            action=ActionType.EMBEDDING,
+            input="urgent embedding",
+            priority_override=Priority.HIGH,
+        )
+        priority, _, source = build_job_params(req)
+        assert priority == Priority.HIGH
+        assert source   == "override"
+
+    def test_override_medium_for_llm(self):
+        """LLM is normally MEDIUM — override stays MEDIUM, source is still 'override'."""
+        from scheduler.models import ActionType, Priority, TaskRequest
+        from scheduler.router import build_job_params
+
+        req = TaskRequest(
+            action=ActionType.LLM_INFERENCE,
+            input="test",
+            priority_override=Priority.MEDIUM,
+        )
+        priority, _, source = build_job_params(req)
+        assert priority == Priority.MEDIUM
+        assert source   == "override"
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # INTEGRATION TESTS — need Redis
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -42,8 +42,18 @@ def infer_provider(action: ActionType, requested_provider: Provider | None) -> P
     return Provider(chain[0])
 
 
-def build_job_params(request: TaskRequest) -> tuple[Priority, Provider]:
-    """Single entry point: returns (priority, provider) for a request."""
-    priority = infer_priority(request.action)
+def build_job_params(request: TaskRequest) -> tuple[Priority, Provider, str]:
+    """
+    Single entry point: returns (priority, provider, priority_source).
+    priority_source is 'inferred' or 'override' — surfaced in the API response
+    so callers know whether their override was applied.
+    """
+    if request.priority_override is not None:
+        priority        = request.priority_override
+        priority_source = "override"
+    else:
+        priority        = infer_priority(request.action)
+        priority_source = "inferred"
+
     provider = infer_provider(request.action, request.provider)
-    return priority, provider
+    return priority, provider, priority_source

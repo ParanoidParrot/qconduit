@@ -1,0 +1,212 @@
+{
+  "uid": "qflow",
+  "title": "qflow — AI Task Scheduler",
+  "tags": ["qflow", "ai", "scheduler"],
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Budget Remaining",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": 0 },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green",  "value": 1 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [{
+        "expr": "qflow_budget_remaining_usd",
+        "legendFormat": "Remaining"
+      }]
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Budget Spent",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "fixed", "fixedColor": "orange" }
+        }
+      },
+      "targets": [{
+        "expr": "qflow_budget_spent_usd",
+        "legendFormat": "Spent"
+      }]
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Budget Reserved (In-flight)",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        }
+      },
+      "targets": [{
+        "expr": "qflow_budget_reserved_usd",
+        "legendFormat": "Reserved"
+      }]
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Jobs Throttled",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red",   "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "sum(qflow_jobs_throttled_total) or vector(0)",
+        "legendFormat": "Throttled"
+      }]
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Circuit Breakers Open",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red",   "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "sum(qflow_circuit_breaker_open) or vector(0)",
+        "legendFormat": "Open circuits"
+      }]
+    },
+
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Queue Depth by Priority",
+      "description": "Watch jobs queue up and drain. Throttling = LOW/MEDIUM flatlines while budget recovers.",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "high" },   "properties": [{ "id": "color", "value": { "fixedColor": "red",    "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "medium" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "low" },    "properties": [{ "id": "color", "value": { "fixedColor": "blue",   "mode": "fixed" } }] }
+        ]
+      },
+      "targets": [
+        { "expr": "qflow_queue_depth{priority=\"high\"}",   "legendFormat": "high" },
+        { "expr": "qflow_queue_depth{priority=\"medium\"}", "legendFormat": "medium" },
+        { "expr": "qflow_queue_depth{priority=\"low\"}",    "legendFormat": "low" }
+      ]
+    },
+
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Budget Burn Rate",
+      "description": "Cumulative spend over time. Slope flattens when throttling kicks in.",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        { "expr": "qflow_budget_spent_usd",    "legendFormat": "Spent" },
+        { "expr": "qflow_budget_reserved_usd", "legendFormat": "Reserved" },
+        { "expr": "qflow_budget_remaining_usd","legendFormat": "Remaining" }
+      ]
+    },
+
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Job Throughput (completed/sec)",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 7 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        { "expr": "rate(qflow_jobs_completed_total[1m])", "legendFormat": "{{provider}}/{{action}}" },
+        { "expr": "rate(qflow_jobs_failed_total[1m])",    "legendFormat": "FAILED {{action}}" }
+      ]
+    },
+
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Provider Latency (p95)",
+      "description": "High latency on a provider will eventually trip the circuit breaker.",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 7 },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(qflow_job_duration_seconds_bucket[2m]))",
+        "legendFormat": "{{provider}}/{{action}} p95"
+      }]
+    },
+
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Jobs by Provider + Action",
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 6 },
+      "targets": [
+        { "expr": "qflow_jobs_total",     "legendFormat": "submitted {{provider}}/{{action}}" },
+        { "expr": "qflow_jobs_completed_total", "legendFormat": "completed {{provider}}/{{action}}" }
+      ]
+    },
+
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Throttled Jobs",
+      "description": "Spikes here = budget pressure. Jobs re-queue after backoff.",
+      "gridPos": { "x": 12, "y": 19, "w": 12, "h": 6 },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "low" },    "properties": [{ "id": "color", "value": { "fixedColor": "blue",  "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "medium" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange","mode": "fixed" } }] }
+        ]
+      },
+      "targets": [{
+        "expr": "rate(qflow_jobs_throttled_total[1m])",
+        "legendFormat": "{{priority}}"
+      }]
+    }
+
+  ],
+
+  "schemaVersion": 38,
+  "version": 1
+}

@@ -1,0 +1,54 @@
+name: qflow batch AI jobs
+
+on:
+  schedule:
+    - cron: "0 2 * * *"     # nightly at 2am UTC
+  workflow_dispatch:          # manual trigger with inputs
+    inputs:
+      action:
+        description: "AI action to run (e.g. translation, embedding)"
+        required: true
+        default: "translation"
+      budget_usd:
+        description: "Max spend for this batch run (USD)"
+        required: true
+        default: "1.0"
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run batch jobs
+        env:
+          REDIS_URL:        redis://localhost:6379
+          TOTAL_BUDGET_USD: ${{ github.event.inputs.budget_usd || '1.0' }}
+          SARVAM_API_KEY:   ${{ secrets.SARVAM_API_KEY }}
+          OPENAI_API_KEY:   ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/run_batch.py \
+            --action "${{ github.event.inputs.action || 'embedding' }}" \
+            --budget "${{ github.event.inputs.budget_usd || '1.0' }}"

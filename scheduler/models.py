@@ -11,7 +11,9 @@ class Provider(str, Enum):
     ANTHROPIC = "anthropic"
     ELEVENLABS = "elevenlabs"
     REPLICATE = "replicate"
-    OLLAMA = "ollama"          # local / free
+    OLLAMA = "ollama"           # local / free
+    MOCK_FLAKY  = "mock_flaky"  # demo/testing only
+    MOCK_STABLE = "mock_stable" # demo/testing only
 
 
 class ActionType(str, Enum):
@@ -49,6 +51,7 @@ class TaskRequest(BaseModel):
     provider: Optional[Provider] = None          # optional: scheduler can infer
     action: ActionType
     input: Any                                   # text, audio bytes (b64), etc.
+    priority_override: Optional[Priority] = None # caller can override inferred priority
     webhook_url: Optional[str] = None            # required for MEDIUM priority
     metadata: dict = Field(default_factory=dict) # pass-through caller context
 
@@ -83,6 +86,7 @@ class TaskAccepted(BaseModel):
     job_id: str
     status: JobStatus
     priority: Priority
+    priority_source: str         # "inferred" | "override" — transparency for caller
     queue_position: Optional[int]
     estimated_cost_usd: float
     budget_remaining_usd: float
