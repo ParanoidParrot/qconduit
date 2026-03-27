@@ -66,7 +66,7 @@ async def submit_task(request: TaskRequest):
     Submit an AI task. Scheduler infers priority and provider.
     Returns job_id immediately — never blocks on AI execution.
     """
-    priority, provider = build_job_params(request)
+    priority, provider, priority_source = build_job_params(request)
     estimated_cost = estimate_cost(provider, request.action, request.input)
 
     job = Job(
@@ -94,6 +94,7 @@ async def submit_task(request: TaskRequest):
         job_id=job.job_id,
         status=JobStatus.QUEUED,
         priority=priority,
+        priority_source=priority_source,
         queue_position=position,
         estimated_cost_usd=estimated_cost,
         budget_remaining_usd=budget_state["remaining_usd"],
