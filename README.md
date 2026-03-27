@@ -40,7 +40,16 @@ python scripts/demo.py
 open http://localhost:3000   # admin / admin
 ```
 
----
+## Demo
+
+Start the stack, then fire 18 jobs across all priority lanes:
+```bash
+docker compose up
+python3 scripts/demo.py
+```
+Watch the queue drain live at http://localhost:3000
+```
+
 
 ## How it works
 
