@@ -7,6 +7,7 @@ Redis keys:
   budget:reserved       float   cost of in-flight jobs (not yet settled)
 """
 
+import os
 import json
 from pathlib import Path
 from typing import Tuple
@@ -58,6 +59,15 @@ def estimate_cost(provider: Provider, action: ActionType, input_payload: any) ->
 
 
 # ── Budget state (Redis-backed) ───────────────────────────────────────────────
+
+redis_url = os.getenv("REDIS_URL")
+
+if not redis_url:
+    # This fallback is only for your local machine development
+    redis_url = "redis://localhost:6379"
+
+
+self.r = redis.from_url(redis_url)
 
 class BudgetController:
     def __init__(self, r: redis.Redis, total_budget_usd: float):
