@@ -6,13 +6,16 @@ from datetime import datetime
 
 
 class Provider(str, Enum):
-    SARVAM = "sarvam"
-    OPENAI = "openai"
     ANTHROPIC = "anthropic"
     ELEVENLABS = "elevenlabs"
+    GEMINI = "gemini" 
+    META  = "meta"
+    OLLAMA = "ollama" 
+    OPENAI = "openai"
+    SARVAM = "sarvam"
     REPLICATE = "replicate"
-    OLLAMA = "ollama"           # local / free
-    MOCK_FLAKY  = "mock_flaky"  # demo/testing only
+    
+    MOCK_FLAKY  = "mock_flaky"      # demo/testing only
     MOCK_STABLE = "mock_stable" # demo/testing only
 
 

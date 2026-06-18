@@ -48,12 +48,12 @@ docker compose up
 python3 scripts/demo.py
 ```
 Watch the queue drain live at http://localhost:3000
-```
 
+
+---
 
 ## How it works
 
-```
 Your App
    │
    ▼  POST /tasks  { action: "tts", input: {...} }
@@ -83,7 +83,7 @@ Your App
                    │ metrics
                    ▼
           Prometheus → Grafana
-```
+
 
 ---
 
@@ -91,9 +91,9 @@ Your App
 
 | Priority | Actions | Response shape |
 |----------|---------|----------------|
-| **HIGH** | `tts`, `stt` | Poll `GET /jobs/{id}` — pseudo-sync |
-| **MEDIUM** | `llm_inference`, `translation`, `transliteration` | Webhook callback when done |
-| **LOW** | `embedding`, `image_generation` | Grafana dashboard link — fire-and-forget |
+| HIGH | `tts`, `stt` | Poll `GET /jobs/{id}` — pseudo-sync |
+| MEDIUM | `llm_inference`, `translation`, `transliteration` | Webhook callback when done |
+| LOW | `embedding`, `image_generation` | Grafana dashboard link — fire-and-forget |
 
 Priority is inferred automatically from action type. User overrides coming in a future release.
 
