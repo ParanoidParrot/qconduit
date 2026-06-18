@@ -37,6 +37,9 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Initialize your client using that URL
+redis_client = redis.from_url(REDIS_URL)
+
 r: redis.Redis = None
 budget: BudgetController = None
 
