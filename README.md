@@ -52,6 +52,17 @@ Watch the queue drain live at http://localhost:3000
 
 ---
 
+## URLs at a glance
+
+Once docker compose up is running:
+
+URLWhat it ishttp://localhost:8000Redirects to Swagger UI — try the API interactivelyhttp://localhost:8000/docsSwagger UI — full interactive API documentationhttp://localhost:8000/healthHealth check — confirms API and Redis are connectedhttp://localhost:8000/queue/statusLive queue depths and budget statehttp://localhost:8000/metricsRaw Prometheus metrics scrape endpointhttp://localhost:3000Grafana — live dashboard (queue drain, budget burn, circuit breakers)http://localhost:9090Prometheus — raw metric queries and graph explorer
+
+
+API_BASE_URL in .env is not a browsable page — it is used internally to build tracker_url in job responses so callers know where to poll for results.
+
+---
+
 ## How it works
 
 Your App
@@ -314,6 +325,11 @@ qconduit/
 | `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
 | `API_BASE_URL` | `http://localhost:8000` | Returned in tracker_url responses |
 | `GRAFANA_URL` | `http://localhost:3000/d/qconduit` | Returned for LOW priority tracker URLs |
-| `SARVAM_API_KEY` | — | Sarvam AI |
-| `OPENAI_API_KEY` | — | OpenAI |
+| `PROMETHEUS_URL` | `http://localhost:9090` | Metrics store, not used by the app; for your reference | 
 | `ANTHROPIC_API_KEY` | — | Anthropic |
+| `ELEVENLABS_API_KEY` | - | ElevenLabs |
+| `GEMINI_API_KEY` | - | Google Gemini |
+| `META_API_KEY` | - | Meta AI |
+| `OLLAMA_API_KEY` | - | Ollama |
+| `OPENAI_API_KEY` | — | OpenAI |
+| `SARVAM_API_KEY` | — | Sarvam AI |
