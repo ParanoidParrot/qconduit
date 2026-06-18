@@ -1,7 +1,7 @@
 {
-  "uid": "qflow",
-  "title": "qflow — AI Task Scheduler",
-  "tags": ["qflow", "ai", "scheduler"],
+  "uid": "qconduit",
+  "title": "qconduit — AI Task Scheduler",
+  "tags": ["qconduit", "ai", "scheduler"],
   "refresh": "5s",
   "time": { "from": "now-15m", "to": "now" },
   "panels": [
@@ -26,7 +26,7 @@
         }
       },
       "targets": [{
-        "expr": "qflow_budget_remaining_usd",
+        "expr": "qconduit_budget_remaining_usd",
         "legendFormat": "Remaining"
       }]
     },
@@ -43,7 +43,7 @@
         }
       },
       "targets": [{
-        "expr": "qflow_budget_spent_usd",
+        "expr": "qconduit_budget_spent_usd",
         "legendFormat": "Spent"
       }]
     },
@@ -60,7 +60,7 @@
         }
       },
       "targets": [{
-        "expr": "qflow_budget_reserved_usd",
+        "expr": "qconduit_budget_reserved_usd",
         "legendFormat": "Reserved"
       }]
     },
@@ -82,7 +82,7 @@
         }
       },
       "targets": [{
-        "expr": "sum(qflow_jobs_throttled_total) or vector(0)",
+        "expr": "sum(qconduit_jobs_throttled_total) or vector(0)",
         "legendFormat": "Throttled"
       }]
     },
@@ -104,7 +104,7 @@
         }
       },
       "targets": [{
-        "expr": "sum(qflow_circuit_breaker_open) or vector(0)",
+        "expr": "sum(qconduit_circuit_breaker_open) or vector(0)",
         "legendFormat": "Open circuits"
       }]
     },
@@ -124,9 +124,9 @@
         ]
       },
       "targets": [
-        { "expr": "qflow_queue_depth{priority=\"high\"}",   "legendFormat": "high" },
-        { "expr": "qflow_queue_depth{priority=\"medium\"}", "legendFormat": "medium" },
-        { "expr": "qflow_queue_depth{priority=\"low\"}",    "legendFormat": "low" }
+        { "expr": "qconduit_queue_depth{priority=\"high\"}",   "legendFormat": "high" },
+        { "expr": "qconduit_queue_depth{priority=\"medium\"}", "legendFormat": "medium" },
+        { "expr": "qconduit_queue_depth{priority=\"low\"}",    "legendFormat": "low" }
       ]
     },
 
@@ -140,9 +140,9 @@
         "defaults": { "unit": "currencyUSD", "custom": { "lineWidth": 2 } }
       },
       "targets": [
-        { "expr": "qflow_budget_spent_usd",    "legendFormat": "Spent" },
-        { "expr": "qflow_budget_reserved_usd", "legendFormat": "Reserved" },
-        { "expr": "qflow_budget_remaining_usd","legendFormat": "Remaining" }
+        { "expr": "qconduit_budget_spent_usd",    "legendFormat": "Spent" },
+        { "expr": "qconduit_budget_reserved_usd", "legendFormat": "Reserved" },
+        { "expr": "qconduit_budget_remaining_usd","legendFormat": "Remaining" }
       ]
     },
 
@@ -155,8 +155,8 @@
         "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
       },
       "targets": [
-        { "expr": "rate(qflow_jobs_completed_total[1m])", "legendFormat": "{{provider}}/{{action}}" },
-        { "expr": "rate(qflow_jobs_failed_total[1m])",    "legendFormat": "FAILED {{action}}" }
+        { "expr": "rate(qconduit_jobs_completed_total[1m])", "legendFormat": "{{provider}}/{{action}}" },
+        { "expr": "rate(qconduit_jobs_failed_total[1m])",    "legendFormat": "FAILED {{action}}" }
       ]
     },
 
@@ -170,7 +170,7 @@
         "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
       },
       "targets": [{
-        "expr": "histogram_quantile(0.95, rate(qflow_job_duration_seconds_bucket[2m]))",
+        "expr": "histogram_quantile(0.95, rate(qconduit_job_duration_seconds_bucket[2m]))",
         "legendFormat": "{{provider}}/{{action}} p95"
       }]
     },
@@ -181,8 +181,8 @@
       "title": "Jobs by Provider + Action",
       "gridPos": { "x": 0, "y": 19, "w": 12, "h": 6 },
       "targets": [
-        { "expr": "qflow_jobs_total",     "legendFormat": "submitted {{provider}}/{{action}}" },
-        { "expr": "qflow_jobs_completed_total", "legendFormat": "completed {{provider}}/{{action}}" }
+        { "expr": "qconduit_jobs_total",     "legendFormat": "submitted {{provider}}/{{action}}" },
+        { "expr": "qconduit_jobs_completed_total", "legendFormat": "completed {{provider}}/{{action}}" }
       ]
     },
 
@@ -200,7 +200,7 @@
         ]
       },
       "targets": [{
-        "expr": "rate(qflow_jobs_throttled_total[1m])",
+        "expr": "rate(qconduit_jobs_throttled_total[1m])",
         "legendFormat": "{{priority}}"
       }]
     }

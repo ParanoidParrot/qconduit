@@ -3,7 +3,7 @@ global:
   evaluation_interval: 5s
 
 scrape_configs:
-  - job_name: 'qflow'
+  - job_name: 'qconduit'
     static_configs:
-      - targets: ['qflow-api:8000']
+      - targets: ['qconduit-api:8000']
     metrics_path: '/metrics'

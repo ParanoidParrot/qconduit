@@ -1,5 +1,5 @@
 """
-qflow — Smart AI Task Scheduler
+qconduit — Smart AI Task Scheduler
 FastAPI entry point.
 """
 
@@ -20,19 +20,19 @@ from scheduler.worker import run_worker
 from scheduler.metrics import jobs_total
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("qflow.api")
+logger = logging.getLogger("qconduit.api")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
 REDIS_URL         = os.getenv("REDIS_URL", "redis://localhost:6379")
 TOTAL_BUDGET_USD  = float(os.getenv("TOTAL_BUDGET_USD", "5.0"))
-GRAFANA_URL       = os.getenv("GRAFANA_URL", "http://localhost:3000/d/qflow")
+GRAFANA_URL       = os.getenv("GRAFANA_URL", "http://localhost:3000/d/qconduit")
 API_BASE_URL      = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="qflow — Smart AI Task Scheduler",
+    title="qconduit — Smart AI Task Scheduler",
     description="Provider-agnostic async scheduler with cost-aware throttling",
     version="0.1.0",
 )
@@ -50,7 +50,7 @@ async def startup():
 
     # Start worker as background task
     asyncio.create_task(run_worker(r, budget))
-    logger.info(f"qflow started | budget=${TOTAL_BUDGET_USD} | redis={REDIS_URL}")
+    logger.info(f"qconduit started | budget=${TOTAL_BUDGET_USD} | redis={REDIS_URL}")
 
 
 @app.on_event("shutdown")
@@ -90,6 +90,10 @@ async def submit_task(request: TaskRequest):
     else:
         tracker_url = f"{API_BASE_URL}/jobs/{job.job_id}"
 
+    override_note = (
+        f" (priority overridden by caller)" if priority_source == "override" else ""
+    )
+
     return TaskAccepted(
         job_id=job.job_id,
         status=JobStatus.QUEUED,
@@ -99,7 +103,7 @@ async def submit_task(request: TaskRequest):
         estimated_cost_usd=estimated_cost,
         budget_remaining_usd=budget_state["remaining_usd"],
         tracker_url=tracker_url,
-        message=f"Queued as {priority.upper()} priority. "
+        message=f"Queued as {priority.upper()} priority{override_note}. "
                 f"Budget remaining: ${budget_state['remaining_usd']:.4f}",
     )
 

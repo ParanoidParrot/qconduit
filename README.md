@@ -85,6 +85,42 @@ Your App
           Prometheus → Grafana
 
 
+
+## Architecture Flow
+
+The diagram below shows how qconduit accepts tasks, assigns priority, queues work, executes provider calls, tracks budgets, and exposes metrics.
+
+```mermaid
+flowchart TD
+    A[Your App] -->|POST /tasks<br/>action: tts<br/>input: {...}| B[qconduit API<br/>FastAPI]
+
+    B --> B1[Infer priority<br/>from action type]
+    B1 --> B2[Estimate cost<br/>from price_map.json]
+    B2 --> B3[Return 202 Accepted<br/>with job_id]
+    B3 -->|enqueue| C[Redis Priority Queues]
+
+    C --> H[HIGH Queue<br/>tts / stt]
+    C --> M[MEDIUM Queue<br/>llm / translation / webhook]
+    C --> L[LOW Queue<br/>embedding / batch jobs]
+
+    H -->|dequeue first| W[Worker]
+    M -->|dequeue after HIGH| W
+    L -->|dequeue after MEDIUM| W
+
+    W --> W1[Budget Check<br/>throttle if limit is approaching]
+    W1 --> W2[Circuit Breaker<br/>skip unhealthy providers]
+    W2 --> W3[Execute Provider API Call]
+    W3 --> W4[Settle Budget<br/>reserved → spent]
+    W4 --> W5[Webhook Callback<br/>MEDIUM priority]
+
+    W -->|metrics| P[Prometheus]
+    P --> G[Grafana]
+
+    W5 -->|callback result| A
+```
+
+
+
 ---
 
 ## Priority lanes
@@ -162,7 +198,7 @@ Each provider has an independent breaker tracked in Redis:
 - **Trips** after 3 consecutive failures
 - **Stays open** for 60 seconds (configurable via `CB_RECOVERY_SECONDS` in `worker.py`)
 - **Auto-resets** after the recovery window expires
-- **Visible in Grafana** via `qflow_circuit_breaker_open{provider="..."}` gauge
+- **Visible in Grafana** via `qconduit_circuit_breaker_open{provider="..."}` gauge
 
 Demo it live — registers a mock provider with a 70% failure rate:
 ```bash
@@ -256,7 +292,7 @@ qconduit/
 │   └── test_e2e.py                # Unit, integration, and live test layers
 ├── prometheus/prometheus.yml
 ├── grafana/
-│   ├── dashboards/qflow.json      # Pre-built dashboard (auto-provisioned)
+│   ├── dashboards/qconduit.json      # Pre-built dashboard (auto-provisioned)
 │   └── provisioning/
 ├── .github/workflows/batch.yml
 ├── docker-compose.yml
@@ -274,7 +310,7 @@ qconduit/
 | `TOTAL_BUDGET_USD` | `5.0` | Max spend before throttling kicks in |
 | `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
 | `API_BASE_URL` | `http://localhost:8000` | Returned in tracker_url responses |
-| `GRAFANA_URL` | `http://localhost:3000/d/qflow` | Returned for LOW priority tracker URLs |
+| `GRAFANA_URL` | `http://localhost:3000/d/qconduit` | Returned for LOW priority tracker URLs |
 | `SARVAM_API_KEY` | — | Sarvam AI |
 | `OPENAI_API_KEY` | — | OpenAI |
 | `ANTHROPIC_API_KEY` | — | Anthropic |

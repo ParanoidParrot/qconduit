@@ -5,7 +5,7 @@ Demonstrates the circuit breaker tripping in real time.
 
 What you'll see in Grafana:
   1. Jobs start processing normally
-  2. After 3 failures, qflow_circuit_breaker_open{provider="mock_flaky"} flips to 1
+  2. After 3 failures, qconduit_circuit_breaker_open{provider="mock_flaky"} flips to 1
   3. Subsequent jobs get re-queued instead of hitting the dead provider
   4. After 60s recovery window, breaker resets and jobs flow again
 
@@ -31,7 +31,7 @@ import httpx
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("qflow.cb_demo")
+logger = logging.getLogger("qconduit.cb_demo")
 
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
@@ -164,9 +164,9 @@ async def main(inject: bool, jobs: int):
 
     logger.info(
         "\nDemo done. Key things to check in Grafana:\n"
-        "  • qflow_circuit_breaker_open{provider='mock_flaky'} should have hit 1\n"
-        "  • qflow_jobs_failed_total should show failures\n"
-        "  • qflow_jobs_throttled_total should spike when circuit is open\n"
+        "  • qconduit_circuit_breaker_open{provider='mock_flaky'} should have hit 1\n"
+        "  • qconduit_jobs_failed_total should show failures\n"
+        "  • qconduit_jobs_throttled_total should spike when circuit is open\n"
         "  • Provider latency p95 shows the slow/failing calls before trip"
     )
 

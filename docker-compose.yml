@@ -12,14 +12,14 @@ services:
       timeout: 3s
       retries: 5
 
-  qflow-api:
+  qconduit-api:
     build: .
     ports:
       - "8000:8000"
     environment:
       REDIS_URL:        redis://redis:6379
       TOTAL_BUDGET_USD: ${TOTAL_BUDGET_USD:-5.0}
-      GRAFANA_URL:      http://localhost:3000/d/qflow
+      GRAFANA_URL:      http://localhost:3000/d/qconduit
       API_BASE_URL:     http://localhost:8000
       SARVAM_API_KEY:   ${SARVAM_API_KEY:-}
       OPENAI_API_KEY:   ${OPENAI_API_KEY:-}
@@ -36,7 +36,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
-      - qflow-api
+      - qconduit-api
 
   grafana:
     image: grafana/grafana:latest

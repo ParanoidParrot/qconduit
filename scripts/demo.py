@@ -24,7 +24,7 @@ import random
 import httpx
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("qflow.demo")
+logger = logging.getLogger("qconduit.demo")
 
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
@@ -122,10 +122,10 @@ async def main(n_jobs: int, tight_budget: bool):
         # for the demo we just warn the user.
         logger.warning(
             "To use tight budget mode: set TOTAL_BUDGET_USD=0.10 in .env and restart.\n"
-            "  echo 'TOTAL_BUDGET_USD=0.10' >> .env && docker-compose restart qflow-api"
+            "  echo 'TOTAL_BUDGET_USD=0.10' >> .env && docker-compose restart qconduit-api"
         )
 
-    logger.info(f"\nqflow demo — firing {n_jobs} jobs")
+    logger.info(f"\nqconduit demo — firing {n_jobs} jobs")
     logger.info(f"API: {API_BASE}")
     logger.info(f"Grafana: http://localhost:3000  (admin/admin)\n")
 
@@ -152,7 +152,7 @@ async def main(n_jobs: int, tight_budget: bool):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="qflow demo load tester")
+    parser = argparse.ArgumentParser(description="qconduit demo load tester")
     parser.add_argument("--jobs",         type=int,  default=18,    help="Number of jobs to fire")
     parser.add_argument("--tight-budget", action="store_true",       help="Trigger throttling")
     args = parser.parse_args()

@@ -21,7 +21,7 @@ from pathlib import Path
 import httpx
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("qflow.batch")
+logger = logging.getLogger("qconduit.batch")
 
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
@@ -179,7 +179,7 @@ async def main(action: str, budget: float, input_file: str | None, concurrency: 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="qflow batch runner")
+    parser = argparse.ArgumentParser(description="qconduit batch runner")
     parser.add_argument("--action",     required=True, help="AI action type")
     parser.add_argument("--budget",     type=float, default=1.0, help="Max spend (USD)")
     parser.add_argument("--input-file", default=None, help="JSONL file of job inputs")

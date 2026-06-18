@@ -1,34 +1,67 @@
 {
-  "_comment": "Scheduler infers priority from action type. User override to be added later.",
-
+  "_comment": "Scheduler infers priority from action type. User can override via priority_override field.",
   "priority_rules": {
     "high": {
-      "actions": ["stt", "tts"],
-      "reason": "Real-time voice interactions — user is waiting, latency matters"
+      "actions": [
+        "stt",
+        "tts"
+      ],
+      "reason": "Real-time voice interactions \u2014 user is waiting, latency matters"
     },
     "medium": {
-      "actions": ["llm_inference", "translation", "transliteration"],
+      "actions": [
+        "llm_inference",
+        "translation",
+        "transliteration"
+      ],
       "reason": "Near-real-time but can tolerate a few seconds; webhook acceptable"
     },
     "low": {
-      "actions": ["embedding", "image_generation"],
-      "reason": "Typically batch workloads — expensive, not time-critical"
+      "actions": [
+        "embedding",
+        "image_generation"
+      ],
+      "reason": "Typically batch workloads \u2014 expensive, not time-critical"
     }
   },
-
   "provider_fallback_chain": {
-    "tts":              ["sarvam", "openai", "elevenlabs", "ollama"],
-    "stt":              ["sarvam", "openai"],
-    "llm_inference":    ["openai", "anthropic", "ollama"],
-    "translation":      ["sarvam", "openai"],
-    "transliteration":  ["sarvam"],
-    "embedding":        ["openai", "ollama"],
-    "image_generation": ["openai", "replicate"]
+    "tts": [
+      "sarvam",
+      "openai",
+      "elevenlabs"
+    ],
+    "stt": [
+      "sarvam",
+      "openai"
+    ],
+    "llm_inference": [
+      "openai",
+      "anthropic",
+      "gemini",
+      "meta",
+      "ollama"
+    ],
+    "translation": [
+      "sarvam",
+      "openai"
+    ],
+    "transliteration": [
+      "sarvam"
+    ],
+    "embedding": [
+      "openai",
+      "gemini",
+      "ollama"
+    ],
+    "image_generation": [
+      "openai",
+      "gemini",
+      "replicate"
+    ]
   },
-
   "budget_throttle_thresholds": {
-    "throttle_low_priority_at_pct":    20,
+    "throttle_low_priority_at_pct": 20,
     "throttle_medium_priority_at_pct": 5,
-    "hard_stop_at_pct":                1
+    "hard_stop_at_pct": 1
   }
 }
