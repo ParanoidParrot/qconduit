@@ -90,6 +90,9 @@ Your App
 
 The diagram below shows how qconduit accepts tasks, assigns priority, queues work, executes provider calls, tracks budgets, and exposes metrics.
 
+
+<p align="center"> <img src="docs/qconduit-architecture.svg" alt="qconduit architecture flow" width="900"> </p>
+
 ```mermaid
 flowchart TD
     A[Your App] -->|POST /tasks<br/>action: tts<br/>input: {...}| B[qconduit API<br/>FastAPI]
