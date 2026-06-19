@@ -6,5 +6,5 @@ datasources:
     access: proxy
     # Railway internal networking — assumes your Prometheus service is
     # named exactly "prometheus" in Railway. Adjust if named differently.
-    url: http://prometheus.railway.internal:9090
+    url: http://railway-prometheus.railway.internal:9090
     isDefault: true
