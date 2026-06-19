@@ -1,0 +1,10 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # Railway internal networking — assumes your Prometheus service is
+    # named exactly "prometheus" in Railway. Adjust if named differently.
+    url: http://prometheus.railway.internal:9090
+    isDefault: true

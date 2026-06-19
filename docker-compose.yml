@@ -17,13 +17,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      REDIS_URL:        redis://redis:6379
-      TOTAL_BUDGET_USD: ${TOTAL_BUDGET_USD:-5.0}
-      GRAFANA_URL:      http://localhost:3000/d/qconduit
-      API_BASE_URL:     http://localhost:8000
-      SARVAM_API_KEY:   ${SARVAM_API_KEY:-}
-      OPENAI_API_KEY:   ${OPENAI_API_KEY:-}
+      REDIS_URL:         redis://redis:6379
+      TOTAL_BUDGET_USD:  ${TOTAL_BUDGET_USD:-5.0}
+      GRAFANA_URL:       ${GRAFANA_URL:-http://localhost:3000/d/qconduit}
+      API_BASE_URL:      ${API_BASE_URL:-http://localhost:8000}
+      SARVAM_API_KEY:    ${SARVAM_API_KEY:-}
+      OPENAI_API_KEY:    ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY:    ${GOOGLE_API_KEY:-}
+      META_API_KEY:      ${META_API_KEY:-}
     depends_on:
       redis:
         condition: service_healthy
@@ -31,8 +33,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
+    # No public port — Grafana reaches it over the internal Docker network only.
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
@@ -43,8 +44,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED:  "true"
+      # Anonymous viewers see every dashboard with no login.
+      # Your real password still works for editing — set GRAFANA_ADMIN_PASSWORD in .env.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_AUTH_ANONYMOUS_ENABLED:    "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE:   "Viewer"
+      GF_AUTH_DISABLE_LOGIN_FORM:   "false"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/dashboards

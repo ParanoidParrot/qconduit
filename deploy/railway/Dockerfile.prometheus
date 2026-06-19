@@ -1,0 +1,13 @@
+# Railway deploys from Docker images but doesn't support docker-compose
+# bind mounts — so the config is baked into the image at build time instead.
+#
+# Deploy this as a separate Railway service:
+#   1. New service → Deploy from repo → root directory: deploy/railway
+#   2. Railway auto-detects this Dockerfile
+#   3. Do NOT generate a public domain for this service — internal only
+
+FROM prom/prometheus:latest
+
+COPY prometheus.yml /etc/prometheus/prometheus.yml
+
+EXPOSE 9090

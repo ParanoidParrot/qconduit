@@ -60,14 +60,14 @@ def estimate_cost(provider: Provider, action: ActionType, input_payload: any) ->
 
 # ── Budget state (Redis-backed) ───────────────────────────────────────────────
 
-redis_url = os.getenv("REDIS_URL")
+#redis_url = os.getenv("REDIS_URL")
 
-if not redis_url:
+#if not redis_url:
     # This fallback is only for your local machine development
-    redis_url = "redis://localhost:6379"
+#    redis_url = "redis://localhost:6379"
 
 
-self.r = redis.from_url(redis_url)
+#self.r = redis.from_url(redis_url)*/
 
 class BudgetController:
     def __init__(self, r: redis.Redis, total_budget_usd: float):
