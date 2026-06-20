@@ -34,6 +34,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     # No public port — Grafana reaches it over the internal Docker network only.
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
