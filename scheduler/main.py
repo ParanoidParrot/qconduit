@@ -67,6 +67,51 @@ async def root():
     return FileResponse("scheduler/static/index.html")
 
 
+@app.get("/config", include_in_schema=False)
+async def public_config():
+    """Non-secret config the landing page needs (e.g. Grafana link)."""
+    return {"grafana_url": GRAFANA_URL}
+
+
+@app.post("/demo/run", include_in_schema=False)
+async def run_public_demo():
+    """
+    Public-safe demo trigger — fires jobs at MOCK providers only.
+    Never touches real API keys, safe for an unauthenticated public button.
+    """
+    from scheduler.providers import _REGISTRY
+    from scheduler.providers.mock_providers import MockFlakyProvider, MockStableProvider
+    from scheduler.models import ActionType, Provider as ProviderEnum
+
+    if "mock_flaky" not in _REGISTRY:
+        _REGISTRY["mock_flaky"]  = MockFlakyProvider(failure_rate=0.3)
+        _REGISTRY["mock_stable"] = MockStableProvider()
+
+    demo_jobs = [
+        (ProviderEnum.MOCK_STABLE, ActionType.TTS,             {"text": "demo tts"}),
+        (ProviderEnum.MOCK_STABLE, ActionType.STT,             {"audio_b64": "ZGVtbw==", "duration_seconds": 3}),
+        (ProviderEnum.MOCK_FLAKY,  ActionType.LLM_INFERENCE,   "demo prompt"),
+        (ProviderEnum.MOCK_STABLE, ActionType.TRANSLATION,     {"input": "hello"}),
+        (ProviderEnum.MOCK_STABLE, ActionType.EMBEDDING,       "demo text"),
+        (ProviderEnum.MOCK_FLAKY,  ActionType.IMAGE_GENERATION,{"prompt": "demo image"}),
+    ] * 3   # 18 jobs total, cycling through all 3 priority lanes
+
+    from scheduler.router import infer_priority
+    from scheduler.budget import estimate_cost as _estimate_cost
+
+    for provider, action, payload in demo_jobs:
+        priority = infer_priority(action)
+        job = Job(
+            provider=provider, action=action, priority=priority,
+            input=payload, estimated_cost_usd=_estimate_cost(provider, action, payload),
+        )
+        await enqueue(r, job)
+        jobs_total.labels(provider=provider.value, action=action.value, priority=priority.value).inc()
+        await asyncio.sleep(0.05)   # tiny stagger so queue depth is visible
+
+    return {"status": "started", "jobs_fired": len(demo_jobs)}
+
+
 @app.post("/tasks", response_model=TaskAccepted, status_code=202)
 async def submit_task(request: TaskRequest):
     """
