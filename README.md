@@ -116,7 +116,7 @@ The diagram below shows how qconduit accepts tasks, assigns priority, queues wor
 qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
 
 
-```md
+
 ## Architecture Flow
 
 qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
@@ -155,7 +155,7 @@ qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the
 ### 4. Worker Execution
 
 | Worker |
-|---|
+|---|---|
 | Budget check: throttle if limit is approaching |
 | Circuit breaker: skip unhealthy providers |
 | Execute provider API call |
@@ -169,7 +169,7 @@ qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the
 | Prometheus | Grafana |
 |---|---|
 | Collects qconduit metrics | Visualizes queue, worker, budget, and provider health |
-```
+
 
 
 ```mermaid
