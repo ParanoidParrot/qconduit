@@ -5,5 +5,5 @@ global:
 scrape_configs:
   - job_name: 'qconduit'
     static_configs:
-      - targets: ['qconduit-api:8000']
+      - targets: ['qconduit:8000']
     metrics_path: '/metrics'

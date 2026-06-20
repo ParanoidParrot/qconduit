@@ -1,4 +1,4 @@
-# Railway config for the qconduit-api service.
+# Railway config for the qconduit service.
 # Place this file at the repo root — Railway auto-detects it.
 
 [build]

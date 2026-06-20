@@ -9,7 +9,7 @@ You'll end up with **4 Railway services** inside one Railway project:
 | Service | Source | Public domain? |
 |---------|--------|-----------------|
 | `redis` | Railway's Redis plugin (managed) | No |
-| `qconduit-api` | This repo, root Dockerfile | **Yes** |
+| `qconduit` | This repo, root Dockerfile | **Yes** |
 | `prometheus` | `deploy/railway/Dockerfile.prometheus` | No |
 | `grafana` | `deploy/railway/Dockerfile.grafana` | **Yes** |
 
@@ -41,7 +41,7 @@ You do *not* need to deploy `redis:7-alpine` yourself — Railway's managed Redi
 
 1. **New** → **GitHub Repo** → select your `qconduit` repo
 2. Railway detects `railway.toml` at the repo root and uses the Dockerfile automatically
-3. **Rename this service to exactly `qconduit-api`** — Prometheus's scrape config depends on this exact name for internal DNS resolution (`qconduit-api.railway.internal`)
+3. **Rename this service to exactly `qconduit`** — Prometheus's scrape config depends on this exact name for internal DNS resolution (`qconduit.railway.internal`)
 4. Go to **Variables** and set:
 
 ```
@@ -86,7 +86,7 @@ GF_SECURITY_ADMIN_PASSWORD = <pick a real password — keep it secret>
 ```
 
 5. **Settings** → **Networking** → **Generate Domain** — this is your public Grafana URL
-6. Go back to **Step 3** and update `GRAFANA_URL` on `qconduit-api` with this real domain
+6. Go back to **Step 3** and update `GRAFANA_URL` on `qconduit` with this real domain
 
 ---
 
@@ -95,7 +95,7 @@ GF_SECURITY_ADMIN_PASSWORD = <pick a real password — keep it secret>
 Railway services reach each other via `<service-name>.railway.internal:<port>`.
 This only works if you named the services **exactly**:
 
-- `qconduit-api`
+- `qconduit`
 - `prometheus`
 
 If you used different names, update:
@@ -135,6 +135,6 @@ long-term, since their free tier and pricing structure can change.
 To reduce cost, you could:
 - Use Railway's **sleep on inactivity** setting for services with low traffic
 - Skip Prometheus/Grafana entirely on Railway and just demo them locally in
-  interviews — keep only `qconduit-api` deployed publicly with the landing
+  interviews — keep only `qconduit` deployed publicly with the landing
   page, and mention "full observability stack runs via `docker compose up`"
   in your README

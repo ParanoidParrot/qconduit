@@ -24,7 +24,7 @@ from scheduler.models import JobStatus, Priority
 from scheduler.providers import get_provider
 from scheduler.queue import dequeue_next, get_queue_depths, update_job_status
 
-logger = logging.getLogger("qflow.worker")
+logger = logging.getLogger("qconduit.worker")
 
 # ── Circuit breaker config ────────────────────────────────────────────────────
 CB_FAILURE_THRESHOLD = 3       # trips after N consecutive failures

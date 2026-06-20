@@ -122,7 +122,7 @@ async def main(n_jobs: int, tight_budget: bool):
         # for the demo we just warn the user.
         logger.warning(
             "To use tight budget mode: set TOTAL_BUDGET_USD=0.10 in .env and restart.\n"
-            "  echo 'TOTAL_BUDGET_USD=0.10' >> .env && docker-compose restart qconduit-api"
+            "  echo 'TOTAL_BUDGET_USD=0.10' >> .env && docker-compose restart qconduit"
         )
 
     logger.info(f"\nqconduit demo — firing {n_jobs} jobs")
