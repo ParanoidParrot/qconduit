@@ -42,15 +42,15 @@ open http://localhost:3000   # admin / admin
 
 ## Demo
 
+Try it out: [TryItHere](https://qconduit-production.up.railway.app/)
+
+
 Start the stack, then fire 18 jobs across all priority lanes:
 ```bash
 docker compose up
 python3 scripts/demo.py
 ```
 Watch the queue drain live at http://localhost:3000
-
-
-Try it out: [TryItHere](https://qconduit-production.up.railway.app/)
 
 
 ---
