@@ -6,7 +6,6 @@ scrape_configs:
   - job_name: 'qconduit'
     static_configs:
       # Railway internal networking: <service-name>.railway.internal
-      # This assumes your API service is named exactly "qconduit" in Railway.
-      # If you named it differently, update this line to match.
+      # Assumes your main API service is named exactly "qconduit" in Railway.
       - targets: ['qconduit.railway.internal:8000']
     metrics_path: '/metrics'

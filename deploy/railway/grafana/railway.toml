@@ -1,0 +1,13 @@
+# Grafana service config — isolated from the repo-root railway.toml.
+#
+# In Railway dashboard for the grafana service, set:
+#   Root Directory:    deploy/railway/grafana
+#   Config File Path:  deploy/railway/grafana/railway.toml
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
