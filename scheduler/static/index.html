@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>qconduit — AI task scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #0E1116;
+    --panel:      #161B22;
+    --panel-2:    #1C232C;
+    --border:     #2A323D;
+    --text:       #E6E8EB;
+    --text-mute:  #8B949E;
+    --amber:      #F2A93B;
+    --teal:       #4FD1C5;
+    --red:        #E5534B;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 56px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--amber); }
+
+  .tagline {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-mute);
+  }
+
+  /* ── Boot sequence ───────────────────────────────────────────────────── */
+
+  .boot {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-mute);
+    margin-bottom: 8px;
+    min-height: 132px;
+  }
+  .boot .ok    { color: var(--teal); }
+  .boot .line  { opacity: 0; animation: fadeIn 0.3s forwards; }
+  .boot .cursor {
+    display: inline-block;
+    width: 7px; height: 14px;
+    background: var(--amber);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 24px 0 12px;
+  }
+  h1 .accent { color: var(--amber); }
+
+  .sub {
+    color: var(--text-mute);
+    font-size: 16px;
+    max-width: 560px;
+    margin-bottom: 36px;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 11px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { border-color: var(--text-mute); }
+  .btn:active { transform: scale(0.98); }
+  .btn.primary {
+    background: var(--amber);
+    color: #1A1304;
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+  .btn.primary:hover { border-color: var(--amber); filter: brightness(1.08); }
+  .btn.primary:disabled { opacity: 0.5; cursor: default; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+
+  /* ── Live queue visualizer (signature element) ──────────────────────── */
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 56px;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  #demo-status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+
+  .lanes { display: flex; flex-direction: column; gap: 14px; }
+  .lane { display: flex; align-items: center; gap: 12px; }
+  .lane-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 64px;
+    flex-shrink: 0;
+  }
+  .lane-label.high   { color: var(--red); }
+  .lane-label.medium  { color: var(--amber); }
+  .lane-label.low     { color: var(--teal); }
+
+  .lane-track {
+    flex: 1;
+    height: 8px;
+    background: var(--panel-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .lane-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .lane-fill.high  { background: var(--red); }
+  .lane-fill.medium { background: var(--amber); }
+  .lane-fill.low    { background: var(--teal); }
+
+  .lane-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+    width: 28px;
+    text-align: right;
+  }
+
+  .budget-line {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+  .budget-line .val { color: var(--text); }
+
+  /* ── Feature cards ───────────────────────────────────────────────────── */
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  .feature {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .feature .f-title {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--amber);
+  }
+  .feature .f-body {
+    font-size: 14px;
+    color: var(--text-mute);
+  }
+
+  footer {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer a { color: var(--text-mute); text-decoration: underline; }
+  footer a:hover { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .boot .line { animation: none; opacity: 1; }
+    .boot .cursor { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">q<span>conduit</span></div>
+    <div class="tagline">provider-agnostic AI task scheduler</div>
+  </header>
+
+  <div class="boot" id="boot"></div>
+
+  <h1>Schedule AI work.<br>Throttle the <span class="accent">budget</span>, not the queue.</h1>
+  <p class="sub">
+    A lightweight async scheduler that sits between your app and any AI provider —
+    queues requests by priority, enforces spend limits, and trips circuit breakers
+    on flaky providers automatically.
+  </p>
+
+  <div class="row">
+    <a class="btn primary" id="run-demo-btn" onclick="runDemo()">
+      <span class="dot"></span> Run demo
+    </a>
+    <a class="btn" href="/docs" target="_blank">API docs</a>
+    <a class="btn" id="grafana-link" href="#" target="_blank">Grafana dashboard</a>
+    <a class="btn" href="https://github.com/yourname/qconduit" target="_blank">View source</a>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Live queue — priority lanes</span>
+      <span id="demo-status">idle</span>
+    </div>
+    <div class="lanes">
+      <div class="lane">
+        <span class="lane-label high">HIGH</span>
+        <div class="lane-track"><div class="lane-fill high" id="fill-high"></div></div>
+        <span class="lane-count" id="count-high">0</span>
+      </div>
+      <div class="lane">
+        <span class="lane-label medium">MEDIUM</span>
+        <div class="lane-track"><div class="lane-fill medium" id="fill-medium"></div></div>
+        <span class="lane-count" id="count-medium">0</span>
+      </div>
+      <div class="lane">
+        <span class="lane-label low">LOW</span>
+        <div class="lane-track"><div class="lane-fill low" id="fill-low"></div></div>
+        <span class="lane-count" id="count-low">0</span>
+      </div>
+    </div>
+    <div class="budget-line">
+      <span>Demo budget remaining</span>
+      <span class="val" id="budget-val">—</span>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="f-title">Priority-aware</div>
+      <div class="f-body">Real-time voice (TTS/STT) jumps the queue ahead of batch embedding jobs — inferred automatically per action type.</div>
+    </div>
+    <div class="feature">
+      <div class="f-title">Budget throttled</div>
+      <div class="f-body">Spend limits enforced at the scheduler level. Low priority jobs back off first, hard stop protects the wallet last.</div>
+    </div>
+    <div class="feature">
+      <div class="f-title">Circuit breaker</div>
+      <div class="f-body">Each provider gets an independent breaker — trips after 3 failures, isolates automatically, recovers on its own.</div>
+    </div>
+    <div class="feature">
+      <div class="f-title">7 providers, 1 interface</div>
+      <div class="f-body">Sarvam, OpenAI, Anthropic, Gemini, Meta, ElevenLabs, Ollama — swap providers via config, zero code changes.</div>
+    </div>
+  </div>
+
+  <footer>
+    <span>qconduit · built for handling AI workloads that are slow, expensive, and unpredictable</span>
+    <a href="/health" target="_blank">health</a>
+  </footer>
+
+</div>
+
+<script>
+  // ── Boot sequence ──────────────────────────────────────────────────────
+  const bootLines = [
+    "REDIS ............ connected",
+    "WORKER ........... running",
+    "PROVIDERS ........ 7 registered",
+    "CIRCUIT BREAKERS . armed",
+    "STATUS ........... <span class='ok'>ready</span>",
+  ];
+
+  const bootEl = document.getElementById('boot');
+  bootLines.forEach((line, i) => {
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.style.animationDelay = (i * 0.15) + 's';
+    div.innerHTML = line;
+    bootEl.appendChild(div);
+  });
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  bootEl.appendChild(cursor);
+
+  // ── Grafana link — backend injects the real URL ───────────────────────
+  fetch('/config').then(r => r.json()).then(cfg => {
+    document.getElementById('grafana-link').href = cfg.grafana_url || '#';
+  }).catch(() => {});
+
+  // ── Demo runner ─────────────────────────────────────────────────────────
+  let polling = null;
+
+  async function runDemo() {
+    const btn = document.getElementById('run-demo-btn');
+    const status = document.getElementById('demo-status');
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.6';
+    status.textContent = 'starting…';
+
+    try {
+      await fetch('/demo/run', { method: 'POST' });
+      status.textContent = 'running';
+      startPolling();
+    } catch (e) {
+      status.textContent = 'error — is the API reachable?';
+    }
+
+    setTimeout(() => {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+    }, 3000);
+  }
+
+  function startPolling() {
+    if (polling) clearInterval(polling);
+    let ticks = 0;
+    polling = setInterval(async () => {
+      ticks++;
+      try {
+        const res = await fetch('/queue/status');
+        const data = await res.json();
+        updateLanes(data.queues);
+        updateBudget(data.budget);
+      } catch (e) { /* ignore transient errors */ }
+
+      if (ticks > 40) { // ~80s safety stop
+        clearInterval(polling);
+        document.getElementById('demo-status').textContent = 'idle';
+      }
+    }, 2000);
+  }
+
+  function updateLanes(queues) {
+    const max = Math.max(queues.high, queues.medium, queues.low, 1);
+    ['high', 'medium', 'low'].forEach(lane => {
+      const count = queues[lane];
+      document.getElementById('fill-' + lane).style.width = (count / max * 100) + '%';
+      document.getElementById('count-' + lane).textContent = count;
+    });
+
+    const status = document.getElementById('demo-status');
+    const total = queues.high + queues.medium + queues.low;
+    status.textContent = total === 0 ? 'drained — demo complete' : `draining (${total} queued)`;
+    if (total === 0 && polling) { clearInterval(polling); }
+  }
+
+  function updateBudget(budget) {
+    document.getElementById('budget-val').textContent =
+      '$' + budget.remaining_usd.toFixed(4) + ' (' + budget.pct_remaining.toFixed(1) + '%)';
+  }
+
+  // Initial load — show current state even before demo runs
+  fetch('/queue/status').then(r => r.json()).then(data => {
+    updateLanes(data.queues);
+    updateBudget(data.budget);
+  }).catch(() => {});
+</script>
+
+</body>
+</html>

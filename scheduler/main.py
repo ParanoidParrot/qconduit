@@ -62,9 +62,9 @@ async def shutdown():
 
 @app.get("/", include_in_schema=False)
 async def root():
-    """Redirect root to API docs."""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/docs")
+    """Landing page — links to docs/Grafana + a live demo runner."""
+    from fastapi.responses import FileResponse
+    return FileResponse("scheduler/static/index.html")
 
 
 @app.post("/tasks", response_model=TaskAccepted, status_code=202)
