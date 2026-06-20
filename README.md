@@ -72,56 +72,10 @@ API_BASE_URL in .env is not a browsable page — it is used internally to build 
 
 ---
 
-## How it works
-
-Your App
-   │
-   ▼  POST /tasks  { action: "tts", input: {...} }
-┌──────────────────────────────────────────────────┐
-│  qconduit API (FastAPI)                          │
-│  • Infers priority from action type              │
-│  • Estimates cost from price_map.json            │
-│  • Returns 202 + job_id immediately              │
-└──────────────────┬───────────────────────────────┘
-                   │ enqueue
-                   ▼
-          Redis Priority Queues
-          ┌─────────┐ ┌──────────┐ ┌───────┐
-          │  HIGH   │ │  MEDIUM  │ │  LOW  │
-          │ tts/stt │ │llm/trans │ │ embed │
-          └─────────┘ └──────────┘ └───────┘
-                   │ dequeue (highest priority first)
-                   ▼
-┌──────────────────────────────────────────────────┐
-│  Worker                                          │
-│  • Budget check → throttle if limit approaching  │
-│  • Circuit breaker → skip unhealthy providers    │
-│  • Execute → provider API call                   │
-│  • Settle budget (reserved → spent)              │
-│  • Webhook callback (MEDIUM priority)            │
-└──────────────────┬───────────────────────────────┘
-                   │ metrics
-                   ▼
-          Prometheus → Grafana
-
-
-
-## Architecture Flow
-
-The diagram below shows how qconduit accepts tasks, assigns priority, queues work, executes provider calls, tracks budgets, and exposes metrics.
-
-
-<p align="center"> <img src="docs/qconduit-architecture.svg" alt="qconduit architecture flow" width="900"> </p>
-
-qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
-
-
-
 ## Architecture Flow
 
 qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
 
----
 
 ### 1. Client Request
 
@@ -155,7 +109,7 @@ qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the
 ### 4. Worker Execution
 
 | Worker |
-|---|---|
+|---|
 | Budget check: throttle if limit is approaching |
 | Circuit breaker: skip unhealthy providers |
 | Execute provider API call |
@@ -169,38 +123,6 @@ qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the
 | Prometheus | Grafana |
 |---|---|
 | Collects qconduit metrics | Visualizes queue, worker, budget, and provider health |
-
-
-
-```mermaid
-flowchart TD
-    A[Your App] -->|POST /tasks<br/>action: tts<br/>input: {...}| B[qconduit API<br/>FastAPI]
-
-    B --> B1[Infer priority<br/>from action type]
-    B1 --> B2[Estimate cost<br/>from price_map.json]
-    B2 --> B3[Return 202 Accepted<br/>with job_id]
-    B3 -->|enqueue| C[Redis Priority Queues]
-
-    C --> H[HIGH Queue<br/>tts / stt]
-    C --> M[MEDIUM Queue<br/>llm / translation / webhook]
-    C --> L[LOW Queue<br/>embedding / batch jobs]
-
-    H -->|dequeue first| W[Worker]
-    M -->|dequeue after HIGH| W
-    L -->|dequeue after MEDIUM| W
-
-    W --> W1[Budget Check<br/>throttle if limit is approaching]
-    W1 --> W2[Circuit Breaker<br/>skip unhealthy providers]
-    W2 --> W3[Execute Provider API Call]
-    W3 --> W4[Settle Budget<br/>reserved → spent]
-    W4 --> W5[Webhook Callback<br/>MEDIUM priority]
-
-    W -->|metrics| P[Prometheus]
-    P --> G[Grafana]
-
-    W5 -->|callback result| A
-```
-
 
 
 ---
