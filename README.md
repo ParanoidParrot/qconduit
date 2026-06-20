@@ -113,6 +113,65 @@ The diagram below shows how qconduit accepts tasks, assigns priority, queues wor
 
 <p align="center"> <img src="docs/qconduit-architecture.svg" alt="qconduit architecture flow" width="900"> </p>
 
+qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
+
+
+```md
+## Architecture Flow
+
+qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
+
+---
+
+### 1. Client Request
+
+| Component | Request |
+|---|---|
+| **Your App** | `POST /tasks` |
+| **Payload** | `{ "action": "tts", "input": { ... } }` |
+
+⬇️
+
+### 2. qconduit API
+
+| qconduit API - FastAPI |
+|---|
+| Infers priority from action type |
+| Estimates cost from `price_map.json` |
+| Returns `202 Accepted` with `job_id` immediately |
+
+⬇️ `enqueue`
+
+### 3. Redis Priority Queues
+
+| HIGH | MEDIUM | LOW |
+|---|---|---|
+| `tts` | `llm` | `embedding` |
+| `stt` | `translation` | `batch jobs` |
+|  | `webhook callbacks` |  |
+
+⬇️ `dequeue highest priority first`
+
+### 4. Worker Execution
+
+| Worker |
+|---|
+| Budget check: throttle if limit is approaching |
+| Circuit breaker: skip unhealthy providers |
+| Execute provider API call |
+| Settle budget: `reserved → spent` |
+| Webhook callback is re-enqueued as MEDIUM priority |
+
+⬇️ `metrics`
+
+### 5. Observability
+
+| Prometheus | Grafana |
+|---|---|
+| Collects qconduit metrics | Visualizes queue, worker, budget, and provider health |
+```
+
+
 ```mermaid
 flowchart TD
     A[Your App] -->|POST /tasks<br/>action: tts<br/>input: {...}| B[qconduit API<br/>FastAPI]
