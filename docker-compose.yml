@@ -12,7 +12,7 @@ services:
       timeout: 3s
       retries: 5
 
-  qconduit:
+  qconduit-api:
     build: .
     ports:
       - "8000:8000"
@@ -34,12 +34,10 @@ services:
   prometheus:
     image: prom/prometheus:latest
     # No public port — Grafana reaches it over the internal Docker network only.
-    ports:
-      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
-      - qconduit
+      - qconduit-api
 
   grafana:
     image: grafana/grafana:latest
