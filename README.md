@@ -1,9 +1,18 @@
 # qconduit — Smart AI Task Scheduler
 
-A lightweight, provider-agnostic async scheduler for AI workloads.
+A lightweight, provider-agnostic async scheduler for AI API workloads.
 Sits between your app and any AI API — queues requests, enforces budget limits,
-trips circuit breakers on flaky providers, and gives you a live Grafana view
+isolates falky providers behind circuit breakers, and gives you a live Grafana view
 of every job from submission to completion.
+
+ 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/api-FastAPI-009688)](https://fastapi.tiangolo.com/)
+ 
+**[Live demo →](https://qconduit-production.up.railway.app/)**
+ 
+---
 
 ---
 
@@ -15,23 +24,33 @@ a web handler will eventually time out, drain your wallet, or both. qconduit fix
 - **Async by default** — your app gets a `job_id` instantly, never blocks on AI execution
 - **Priority-aware** — real-time voice (TTS/STT) jumps the queue ahead of batch jobs
 - **Budget throttling** — spend limits enforced at the scheduler level, not per-call
-- **Circuit breaker** — flaky providers get isolated automatically before failures cascade
+- **Circuit breaker** — unhealthy providers get isolated automatically before failures cascade
 - **Provider-agnostic** — swap Sarvam ↔ OpenAI ↔ Anthropic by changing one config line
 - **Observable** — Prometheus + Grafana wired up out of the box, zero dashboard setup
 
+---
+
+## Where this sits
+ 
+qconduit overlaps with the LLM gateway category — [LiteLLM](https://github.com/BerriAI/litellm), [Portkey](https://github.com/Portkey-AI/gateway), Bifrost and others. Those are mature, well-resourced projects, and if you need a production gateway today you should use one of them.
+ 
+qconduit takes a narrower angle: it is a **scheduler** rather than a proxy. Requests are queued and executed asynchronously across priority lanes instead of being forwarded inline, which is the right shape when latency requirements differ sharply across job types — interactive TTS against overnight batch translation, for example — and when a hard budget ceiling matters more than per-request throughput.
+ 
+It was built to explore that design. It is a working prototype with tests and metrics, not a production gateway.
+ 
 ---
 
 ## Quickstart
 
 ```bash
 # 1. Clone and configure
-git clone https://github.com/yourname/qconduit
+git clone https://github.com/ParanoidParrot/qconduit
 cd qconduit
 cp .env.example .env
 # Edit .env — add API keys, set TOTAL_BUDGET_USD
 
 # 2. Start the full stack (API + Redis + Prometheus + Grafana)
-docker-compose up
+docker compose up
 
 # 3. Fire a burst of demo jobs across all priority lanes
 python scripts/demo.py
@@ -41,9 +60,6 @@ open http://localhost:3000   # admin / admin
 ```
 
 ## Demo
-
-Try it out: [TryItHere](https://qconduit-production.up.railway.app/)
-
 
 Start the stack, then fire 18 jobs across all priority lanes:
 ```bash
@@ -55,7 +71,7 @@ Watch the queue drain live at http://localhost:3000
 
 ---
 
-## URLs at a glance
+## URLs
 
 Once docker compose up is running:
 
@@ -80,52 +96,25 @@ API_BASE_URL in .env is not a browsable page — it is used internally to build 
 qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the action type, queues work in Redis, executes provider calls through workers, applies budget and circuit-breaker controls, and exposes metrics through Prometheus and Grafana.
 
 
-### 1. Client Request
-
-| Component | Request |
-|---|---|
-| **Your App** | `POST /tasks` |
-| **Payload** | `{ "action": "tts", "input": { ... } }` |
-
-⬇️
-
-### 2. qconduit API
-
-| qconduit API - FastAPI |
-|---|
-| Infers priority from action type |
-| Estimates cost from `price_map.json` |
-| Returns `202 Accepted` with `job_id` immediately |
-
-⬇️ `enqueue`
-
-### 3. Redis Priority Queues
-
-| HIGH | MEDIUM | LOW |
-|---|---|---|
-| `tts` | `llm` | `embedding` |
-| `stt` | `translation` | `batch jobs` |
-|  | `webhook callbacks` |  |
-
-⬇️ `dequeue highest priority first`
-
-### 4. Worker Execution
-
-| Worker |
-|---|
-| Budget check: throttle if limit is approaching |
-| Circuit breaker: skip unhealthy providers |
-| Execute provider API call |
-| Settle budget: `reserved → spent` |
-| Webhook callback is re-enqueued as MEDIUM priority |
-
-⬇️ `metrics`
-
-### 5. Observability
-
-| Prometheus | Grafana |
-|---|---|
-| Collects qconduit metrics | Visualizes queue, worker, budget, and provider health |
+```mermaid
+flowchart TD
+    A[Your App<br/>POST /tasks] --> B[qconduit API]
+    B --> B1[Infer priority from action type]
+    B1 --> B2[Estimate cost from price_map.json]
+    B2 --> B3[Return 202 + job_id immediately]
+    B3 --> C{Redis priority queues}
+    C -->|HIGH| H[tts · stt]
+    C -->|MEDIUM| M[llm · translation · webhooks]
+    C -->|LOW| L[embedding · batch]
+    H --> W[Worker]
+    M --> W
+    L --> W
+    W --> W1[Budget check — throttle near limit]
+    W1 --> W2[Circuit breaker — skip unhealthy providers]
+    W2 --> W3[Execute provider call]
+    W3 --> W4[Settle budget: reserved → spent]
+    W4 --> P[Prometheus] --> G[Grafana]
+```
 
 
 ---
@@ -134,11 +123,11 @@ qconduit accepts tasks through a FastAPI endpoint, assigns priority based on the
 
 | Priority | Actions | Response shape |
 |----------|---------|----------------|
-| HIGH | `tts`, `stt` | Poll `GET /jobs/{id}` — pseudo-sync |
-| MEDIUM | `llm_inference`, `translation`, `transliteration` | Webhook callback when done |
-| LOW | `embedding`, `image_generation` | Grafana dashboard link — fire-and-forget |
+| HIGH | `tts`, `stt` | Poll `GET /jobs/{id}` — pseudo-synchronous |
+| MEDIUM | `llm_inference`, `translation`, `transliteration` | Webhook callback on completion |
+| LOW | `embedding`, `image_generation` | Fire-and-forget, tracked in Grafana |
 
-Priority is inferred automatically from action type. User overrides coming in a future release.
+Priority is inferred automatically from action type. Per-request overrides are not implemented.
 
 ---
 
@@ -246,7 +235,7 @@ The worker and budget logic need no changes — they only talk to `BaseProvider`
 pytest tests/ -v
 
 # Unit + integration — needs Redis running
-docker-compose up -d redis
+docker compose up -d redis
 pytest tests/ -v
 
 # Full suite including live API calls — needs keys in .env
@@ -319,3 +308,18 @@ qconduit/
 | `API_BASE_URL` | `http://localhost:8000` | Returned in tracker_url responses |
 | `GRAFANA_URL` | `http://localhost:3000/d/qconduit` | Returned for LOW priority tracker URLs |
 | `PROMETHEUS_URL` | `http://localhost:9090` | Metrics store, not used by the app; for your reference | 
+
+
+---
+
+## Known limitations
+ 
+- Priority is inferred from action type only; no per-request override
+- Cost estimation uses a static `price_map.json` and will drift from provider pricing
+- Single-node Redis; no queue persistence guarantees under Redis failure
+- Budget state is global rather than per-tenant
+---
+ 
+## License
+ 
+[MIT](LICENSE)
